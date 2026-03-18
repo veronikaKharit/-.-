@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Диалоговый тренажёр</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; background: #f7f8fb; }
+    .card { background: white; padding: 20px; border-radius: 12px; max-width: 700px; box-shadow: 0 2px 12px rgba(0,0,0,.08); }
+    input, textarea, button { width: 100%; margin-top: 10px; padding: 10px; }
+    pre { background: #f1f3f8; padding: 12px; border-radius: 8px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Диалоговый тренажёр</h1>
+    <p>Простой фронтенд для проверки взаимодействия сервисов.</p>
+
+    <button onclick="checkHealth()">Проверить API</button>
+    <button onclick="createScenario()">Создать сценарий</button>
+    <button onclick="createSession()">Создать сессию</button>
+    <textarea id="answerText" placeholder="Введите ответ стажёра"></textarea>
+    <button onclick="sendAnswer()">Отправить ответ</button>
+    <button onclick="finishSession()">Завершить сессию</button>
+    <textarea id="chatQuestion" placeholder="Вопрос для чат-бота"></textarea>
+    <button onclick="askChatbot()">Спросить чат-бота</button>
+
+    <pre id="result">Результаты появятся здесь...</pre>
+  </div>
+
+  <script>
+    let scenarioId = null;
+    let sessionId = null;
+
+    async function api(path, method = 'GET', body = null) {
+      const response = await fetch(path, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : null
+      });
+      return response.json();
+    }
+
+    async function checkHealth() {
+      document.getElementById('result').textContent = JSON.stringify(await api('/api/v1/health'), null, 2);
+    }
+
+    async function createScenario() {
+      const data = await api('/api/v1/scenarios', 'POST', { name: 'Тестовый сценарий', difficulty: 2 });
+      scenarioId = data.id;
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function createSession() {
+      const data = await api('/api/v1/sessions', 'POST', { userId: 'usr-1', scenarioId });
+      sessionId = data.id;
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function sendAnswer() {
+      const answerText = document.getElementById('answerText').value;
+      const data = await api(`/api/v1/sessions/${sessionId}/answer`, 'POST', { answerText });
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function finishSession() {
+      const data = await api(`/api/v1/sessions/${sessionId}/finish`, 'PUT');
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+
+    async function askChatbot() {
+      const question = document.getElementById('chatQuestion').value;
+      const data = await api('/api/v1/chat/ask', 'POST', { question });
+      document.getElementById('result').textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>
