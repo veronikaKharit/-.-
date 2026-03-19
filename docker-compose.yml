@@ -1,0 +1,51 @@
+name: LabWork-5
+services:
+  frontend:
+    build: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend-api
+
+  backend-api:
+    build: ./backend_api
+    environment:
+      TRAINING_SERVICE_URL: http://training-service:8001
+      CHATBOT_SERVICE_URL: http://chatbot-service:8002
+    ports:
+      - "8000:8000"
+    depends_on:
+      - training-service
+      - chatbot-service
+
+  training-service:
+    build: ./training_service
+    environment:
+      DATABASE_URL: postgresql://app:app@postgres:5432/trainerdb
+    ports:
+      - "8001:8001"
+    depends_on:
+      - postgres
+
+  chatbot-service:
+    build: ./chatbot_service
+    environment:
+      DATABASE_URL: postgresql://app:app@postgres:5432/trainerdb
+    ports:
+      - "8002:8002"
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: trainerdb
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
